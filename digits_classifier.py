@@ -201,7 +201,9 @@ class ClassifierHandler:
         This function should load a pretrained / tuned 'DigitClassifier' object.
         We will use this object to evaluate your classifications
         """
-        raise NotImplementedError("function is not implemented")
+        model = DigitClassifier(ClassifierArgs())
+        model.load_train_data()
+        return model
 
 
 model = DigitClassifier(ClassifierArgs())
