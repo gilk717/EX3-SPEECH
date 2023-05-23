@@ -189,7 +189,9 @@ class DigitClassifier:
         return: a list of strings of the following format: '{filename} - {predict using euclidean distance} - {predict using DTW distance}'
         Note: filename should not include parent path, but only the file name itself.
         """
-        raise NotImplementedError("function is not implemented")
+        predict_dtw = self.classify_using_DTW_distance(audio_files)
+        predict_euc = self.classify_using_eucledian_distance(audio_files)
+        return [filename + " - " + str(euc) + " - " + str(dtw) for filename, euc, dtw in zip(audio_files, predict_euc, predict_dtw) ]
 
 
 class ClassifierHandler:
@@ -212,52 +214,54 @@ test_paths = [
     ]
 ]
 
+print(model.classify(test_paths))
+
 # print('"' + '",\n "'.join(sorted(test_paths, reverse=True)) + '"')
-test_real_results = [3, 1, 4, 4, 4, 2, 1, 2, 1, 5, 5, 1, 2, 4, 2, 1, 2, 5 , 3, 1]
-
-print(model.classify_using_eucledian_distance([
-"./test_files/fdb56edc-2842-4b10-be22-2bb0bcb800a4.wav",
- "./test_files/fdb31f76-2f16-4f29-80cb-d24f30e94020.wav",
- "./test_files/fc627939-9957-4cfc-a6d7-24773953f60e.wav",
- "./test_files/fbb2e629-b1b0-4b93-893e-55b3b5dd7304.wav",
- "./test_files/fba325b5-404d-4650-a6c6-7f1d3533091e.wav",
- "./test_files/fb95fddb-c204-4a9f-925c-280f6c332673.wav",
- "./test_files/f5032534-cc6a-4fbe-ad96-1379fdedb0cd.wav",
- "./test_files/f492d24b-31b9-4835-a092-d67c09f83380.wav",
-    "./test_files/f44ea05b-177b-4b65-8c9e-cf77c65de82a.wav",
-    "./test_files/f4ea3cb0-b622-43ab-9cdf-b76d3cb74efd.wav",
-    "./test_files/eedcf0f2-c14f-45d6-bb18-2cf9e14c38c8.wav",
-    "./test_files/ed971c32-4a3e-4f8a-86fb-f5463e10ddb1.wav",
-    "./test_files/ecf82db6-ac99-4b2d-81bf-6ee58fd88d95.wav",
-    "./test_files/ebdc6a9b-328f-47b8-a369-d779a5bf7bb9.wav",
-    "./test_files/eb172156-e393-43e9-8f30-0d629b4f900f.wav",
-    "./test_files/eb2f7016-cd34-4b99-b17b-355683780305.wav",
-    "./test_files/ea0949d7-737c-4714-a634-ccffa8b586f8.wav",
-    "./test_files/ea37a038-e95f-4326-a888-9948d29bd785.wav",
-    "./test_files/ea0e7d98-cb6f-45a7-b6ea-92e0000a2a44.wav",
-    "./test_files/e80018b3-23d0-4964-be92-a616e0243ce0.wav",
-    ]))
-
-print(model.classify_using_DTW_distance([
-"./test_files/fdb56edc-2842-4b10-be22-2bb0bcb800a4.wav",
- "./test_files/fdb31f76-2f16-4f29-80cb-d24f30e94020.wav",
- "./test_files/fc627939-9957-4cfc-a6d7-24773953f60e.wav",
- "./test_files/fbb2e629-b1b0-4b93-893e-55b3b5dd7304.wav",
- "./test_files/fba325b5-404d-4650-a6c6-7f1d3533091e.wav",
- "./test_files/fb95fddb-c204-4a9f-925c-280f6c332673.wav",
- "./test_files/f5032534-cc6a-4fbe-ad96-1379fdedb0cd.wav",
- "./test_files/f492d24b-31b9-4835-a092-d67c09f83380.wav",
-    "./test_files/f44ea05b-177b-4b65-8c9e-cf77c65de82a.wav",
-    "./test_files/f4ea3cb0-b622-43ab-9cdf-b76d3cb74efd.wav",
-    "./test_files/eedcf0f2-c14f-45d6-bb18-2cf9e14c38c8.wav",
-    "./test_files/ed971c32-4a3e-4f8a-86fb-f5463e10ddb1.wav",
-    "./test_files/ecf82db6-ac99-4b2d-81bf-6ee58fd88d95.wav",
-    "./test_files/ebdc6a9b-328f-47b8-a369-d779a5bf7bb9.wav",
-    "./test_files/eb172156-e393-43e9-8f30-0d629b4f900f.wav",
-    "./test_files/eb2f7016-cd34-4b99-b17b-355683780305.wav",
-    "./test_files/ea0949d7-737c-4714-a634-ccffa8b586f8.wav",
-    "./test_files/ea37a038-e95f-4326-a888-9948d29bd785.wav",
-    "./test_files/ea0e7d98-cb6f-45a7-b6ea-92e0000a2a44.wav",
-    "./test_files/e80018b3-23d0-4964-be92-a616e0243ce0.wav",
-    ]))
-print(test_real_results)
+# test_real_results = [3, 1, 4, 4, 4, 2, 1, 2, 1, 5, 5, 1, 2, 4, 2, 1, 2, 5 , 3, 1]
+#
+# print(model.classify_using_eucledian_distance([
+# "./test_files/fdb56edc-2842-4b10-be22-2bb0bcb800a4.wav",
+#  "./test_files/fdb31f76-2f16-4f29-80cb-d24f30e94020.wav",
+#  "./test_files/fc627939-9957-4cfc-a6d7-24773953f60e.wav",
+#  "./test_files/fbb2e629-b1b0-4b93-893e-55b3b5dd7304.wav",
+#  "./test_files/fba325b5-404d-4650-a6c6-7f1d3533091e.wav",
+#  "./test_files/fb95fddb-c204-4a9f-925c-280f6c332673.wav",
+#  "./test_files/f5032534-cc6a-4fbe-ad96-1379fdedb0cd.wav",
+#  "./test_files/f492d24b-31b9-4835-a092-d67c09f83380.wav",
+#     "./test_files/f44ea05b-177b-4b65-8c9e-cf77c65de82a.wav",
+#     "./test_files/f4ea3cb0-b622-43ab-9cdf-b76d3cb74efd.wav",
+#     "./test_files/eedcf0f2-c14f-45d6-bb18-2cf9e14c38c8.wav",
+#     "./test_files/ed971c32-4a3e-4f8a-86fb-f5463e10ddb1.wav",
+#     "./test_files/ecf82db6-ac99-4b2d-81bf-6ee58fd88d95.wav",
+#     "./test_files/ebdc6a9b-328f-47b8-a369-d779a5bf7bb9.wav",
+#     "./test_files/eb172156-e393-43e9-8f30-0d629b4f900f.wav",
+#     "./test_files/eb2f7016-cd34-4b99-b17b-355683780305.wav",
+#     "./test_files/ea0949d7-737c-4714-a634-ccffa8b586f8.wav",
+#     "./test_files/ea37a038-e95f-4326-a888-9948d29bd785.wav",
+#     "./test_files/ea0e7d98-cb6f-45a7-b6ea-92e0000a2a44.wav",
+#     "./test_files/e80018b3-23d0-4964-be92-a616e0243ce0.wav",
+#     ]))
+#
+# print(model.classify_using_DTW_distance([
+# "./test_files/fdb56edc-2842-4b10-be22-2bb0bcb800a4.wav",
+#  "./test_files/fdb31f76-2f16-4f29-80cb-d24f30e94020.wav",
+#  "./test_files/fc627939-9957-4cfc-a6d7-24773953f60e.wav",
+#  "./test_files/fbb2e629-b1b0-4b93-893e-55b3b5dd7304.wav",
+#  "./test_files/fba325b5-404d-4650-a6c6-7f1d3533091e.wav",
+#  "./test_files/fb95fddb-c204-4a9f-925c-280f6c332673.wav",
+#  "./test_files/f5032534-cc6a-4fbe-ad96-1379fdedb0cd.wav",
+#  "./test_files/f492d24b-31b9-4835-a092-d67c09f83380.wav",
+#     "./test_files/f44ea05b-177b-4b65-8c9e-cf77c65de82a.wav",
+#     "./test_files/f4ea3cb0-b622-43ab-9cdf-b76d3cb74efd.wav",
+#     "./test_files/eedcf0f2-c14f-45d6-bb18-2cf9e14c38c8.wav",
+#     "./test_files/ed971c32-4a3e-4f8a-86fb-f5463e10ddb1.wav",
+#     "./test_files/ecf82db6-ac99-4b2d-81bf-6ee58fd88d95.wav",
+#     "./test_files/ebdc6a9b-328f-47b8-a369-d779a5bf7bb9.wav",
+#     "./test_files/eb172156-e393-43e9-8f30-0d629b4f900f.wav",
+#     "./test_files/eb2f7016-cd34-4b99-b17b-355683780305.wav",
+#     "./test_files/ea0949d7-737c-4714-a634-ccffa8b586f8.wav",
+#     "./test_files/ea37a038-e95f-4326-a888-9948d29bd785.wav",
+#     "./test_files/ea0e7d98-cb6f-45a7-b6ea-92e0000a2a44.wav",
+#     "./test_files/e80018b3-23d0-4964-be92-a616e0243ce0.wav",
+#     ]))
+# print(test_real_results)
