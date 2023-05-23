@@ -67,6 +67,17 @@ class DigitClassifier():
         return test_data
 
     @staticmethod
+    def extract_mfccs_from_tensor(audio: torch.Tensor) -> torch.Tensor:
+        """
+        function to extract mfccs from a given audio
+        audio: a tensor of shape [Channels, Time]
+        return: a tensor of shape [MFCCs, Time]
+        """
+        numpy_audio = audio.numpy()
+        mfcc = librosa.feature.mfcc(y=audio, n_mfcc=20)
+        return torch.tensor(mfcc)
+
+    @staticmethod
     def extract_mfccs(audio: numpy.ndarray, sr) -> torch.Tensor:
         """
         function to extract mfccs from a given audio
@@ -87,7 +98,12 @@ class DigitClassifier():
             # load audio files from paths
             test_data = DigitClassifier.load_test_data(audio_files)
         else:
-            test_data = audio_files.squeeze(1)
+            ## TODO: test this
+            audio_files = audio_files.squeeze(1)
+            test_data = torch.tensor([])
+            for test_sample in audio_files:
+                cur_test_feats = DigitClassifier.extract_mfccs_from_tensor(test_sample)
+                test_data = torch.cat((test_data, cur_test_feats.unsqueeze(0)))
         results = []
         for test_sample in test_data:
             predicted_label = self.classify_sample_using_euclidean(test_sample)
