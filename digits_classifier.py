@@ -19,13 +19,13 @@ class ClassifierArgs:
     """
     # we will use this to give an absolute path to the data, make sure you read the data using this argument. 
     # you may assume the train data is the same
-    path_to_training_data_dir: str = "train_files"
-    path_to_test_data_dir: str = "test_files"
+    path_to_training_data_dir: str = "./train_files"
+    path_to_test_data_dir: str = "./test_files"
 
     # you may add other args here
 
 
-class DigitClassifier():
+class DigitClassifier:
     """
     You should Implement your classifier object here
     """
@@ -74,7 +74,7 @@ class DigitClassifier():
         return: a tensor of shape [MFCCs, Time]
         """
         numpy_audio = audio.numpy()
-        mfcc = librosa.feature.mfcc(y=audio, n_mfcc=20)
+        mfcc = librosa.feature.mfcc(y=numpy_audio, n_mfcc=20)
         return torch.tensor(mfcc)
 
     @staticmethod
@@ -98,7 +98,6 @@ class DigitClassifier():
             # load audio files from paths
             test_data = DigitClassifier.load_test_data(audio_files)
         else:
-            ## TODO: test this
             audio_files = audio_files.squeeze(1)
             test_data = torch.tensor([])
             for test_sample in audio_files:
@@ -169,18 +168,7 @@ model.load_train_data()
 test_paths = [path for path in
              [os.path.join(model.path_to_test_data, name) for name in os.listdir(model.path_to_test_data)]]
 
-#load test data as a tensor of shape [Batch, Channels, Time]
-
-test_data = torch.tensor([])
-for test_file_path in test_paths:
-    audio, sr = librosa.load(test_file_path)
-    test_data = torch.cat((test_data, torch.tensor(audio).unsqueeze(0)))
-
-test_data = test_data.unsqueeze(1)
-print(test_data.shape)
-
-
-
-print(model.classify_using_eucledian_distance(test_data))
 test_real_results = [2, 2, 2, 2, 2, 2, 2, 3, 2, 1, 3, 2, 4, 2, 1, 5, 4, 5, 4, 1, 4, 3]
+
+print(model.classify_using_eucledian_distance(test_paths))
 print(test_real_results)
