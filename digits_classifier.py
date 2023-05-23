@@ -56,18 +56,18 @@ class DigitClassifier():
         pass
 
     @staticmethod
-    def load_test_data(paths_to_test_data_dir: tp.List[str]):
+    def load_test_data(paths_to_test_data_dir: tp.List[str]) -> torch.Tensor:
         """
         function to load data for testing
         """
         test_data = torch.tensor([])
-        for test_file_path in os.listdir(path_to_test_data_dir):
-            test_paths_file = os.path.join(path_to_test_data_dir, test_file_path)
-            audio, sr = librosa.load(test_paths_file)
-            test_data = torch.cat((test_data, self.extract_mfccs(audio, sr)))
+        for test_file_path in paths_to_test_data_dir:
+            audio, sr = librosa.load(test_file_path)
+            test_data = torch.cat((test_data, DigitClassifier.extract_mfccs(audio, sr)))
         return test_data
 
-    def extract_mfccs(self, audio: numpy.ndarray, sr) -> torch.Tensor:
+    @staticmethod
+    def extract_mfccs(audio: numpy.ndarray, sr) -> torch.Tensor:
         """
         function to extract mfccs from a given audio
         audio: a numpy array of shape [Time]
@@ -85,7 +85,10 @@ class DigitClassifier():
         """
         if isinstance(audio_files, list):
             # load audio files from paths
-            test_data = load_test_data(audio_files)
+            test_data = DigitClassifier.load_test_data(audio_files)
+        else:
+            test_data = audio_files
+
 
     @abstractmethod
     def classify_using_DTW_distance(self, audio_files: tp.Union[tp.List[str], torch.Tensor]) -> tp.List[int]:
