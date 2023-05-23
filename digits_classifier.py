@@ -1,8 +1,11 @@
+import os
 from abc import abstractmethod
+
+import librosa
+import numpy
 import torch
 import typing as tp
 from dataclasses import dataclass
-
 
 
 @dataclass
@@ -16,8 +19,9 @@ class ClassifierArgs:
     """
     # we will use this to give an absolute path to the data, make sure you read the data using this argument. 
     # you may assume the train data is the same
-    path_to_training_data_dir: str = "./train_files" 
-    
+    path_to_training_data_dir: str = "./train_files"
+    path_to_test_data_dir: str = "./test_files"
+
     # you may add other args here
 
 
@@ -25,8 +29,52 @@ class DigitClassifier():
     """
     You should Implement your classifier object here
     """
+    word_to_number = {
+        'one': 1,
+        'two': 2,
+        'three': 3,
+        'four': 4,
+        'five': 5
+    }
+
     def __init__(self, args: ClassifierArgs):
         self.path_to_training_data = args.path_to_training_data_dir
+        self.path_to_test_data = args.path_to_test_data_dir
+        self.train_data: tp.List[torch.Tensor] = []
+
+    def load_train_data(self):
+        """
+        function to load train data
+        """
+        for train_folder_path in sorted(os.listdir(self.path_to_training_data), key=lambda x: self.word_to_number[x]):
+            cur_data_torch = torch.tensor([])
+            for train_file_path in os.listdir(os.path.join(self.path_to_training_data, train_folder_path)):
+                train_paths_file = os.path.join(self.path_to_training_data, train_folder_path, train_file_path)
+                audio, sr = librosa.load(train_paths_file)
+                cur_data_torch = torch.cat((cur_data_torch, self.extract_mfccs(audio, sr)))
+            self.train_data.append(cur_data_torch)
+        pass
+
+    @staticmethod
+    def load_test_data(paths_to_test_data_dir: tp.List[str]):
+        """
+        function to load data for testing
+        """
+        test_data = torch.tensor([])
+        for test_file_path in os.listdir(path_to_test_data_dir):
+            test_paths_file = os.path.join(path_to_test_data_dir, test_file_path)
+            audio, sr = librosa.load(test_paths_file)
+            test_data = torch.cat((test_data, self.extract_mfccs(audio, sr)))
+        return test_data
+
+    def extract_mfccs(self, audio: numpy.ndarray, sr) -> torch.Tensor:
+        """
+        function to extract mfccs from a given audio
+        audio: a numpy array of shape [Time]
+        return: a tensor of shape [MFCCs, Time]
+        """
+        mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=20)
+        return torch.tensor(mfcc).unsqueeze(0)
 
     @abstractmethod
     def classify_using_eucledian_distance(self, audio_files: tp.Union[tp.List[str], torch.Tensor]) -> tp.List[int]:
@@ -35,8 +83,10 @@ class DigitClassifier():
         audio_files: list of audio file paths or a a batch of audio files of shape [Batch, Channels, Time]
         return: list of predicted label for each batch entry
         """
-        raise NotImplementedError("function is not implemented")
-    
+        if isinstance(audio_files, list):
+            # load audio files from paths
+            test_data = load_test_data(audio_files)
+
     @abstractmethod
     def classify_using_DTW_distance(self, audio_files: tp.Union[tp.List[str], torch.Tensor]) -> tp.List[int]:
         """
@@ -45,7 +95,6 @@ class DigitClassifier():
         return: list of predicted label for each batch entry
         """
         raise NotImplementedError("function is not implemented")
-
 
     @abstractmethod
     def classify(self, audio_files: tp.List[str]) -> tp.List[str]:
@@ -56,7 +105,7 @@ class DigitClassifier():
         Note: filename should not include parent path, but only the file name itself.
         """
         raise NotImplementedError("function is not implemented")
-    
+
 
 class ClassifierHandler:
 
@@ -67,3 +116,7 @@ class ClassifierHandler:
         We will use this object to evaluate your classifications
         """
         raise NotImplementedError("function is not implemented")
+
+
+DigitClassifier(ClassifierArgs()).load_train_data()
+pass
