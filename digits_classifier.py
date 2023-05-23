@@ -1,11 +1,11 @@
 import os
+import typing as tp
 from abc import abstractmethod
+from dataclasses import dataclass
 
 import librosa
 import numpy
 import torch
-import typing as tp
-from dataclasses import dataclass
 
 
 @dataclass
@@ -14,10 +14,11 @@ class ClassifierArgs:
     This dataclass defines a training configuration.
     feel free to add/change it as you see fit, do NOT remove the following fields as we will use
     them in test time.
-    If you add additional values to your training configuration please add them in here with 
+    If you add additional values to your training configuration please add them in here with
     default values (so run won't break when we test this).
     """
-    # we will use this to give an absolute path to the data, make sure you read the data using this argument. 
+
+    # we will use this to give an absolute path to the data, make sure you read the data using this argument.
     # you may assume the train data is the same
     path_to_training_data_dir: str = "./train_files"
     path_to_test_data_dir: str = "./test_files"
@@ -29,13 +30,8 @@ class DigitClassifier:
     """
     You should Implement your classifier object here
     """
-    word_to_number = {
-        'one': 1,
-        'two': 2,
-        'three': 3,
-        'four': 4,
-        'five': 5
-    }
+
+    word_to_number = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
 
     def __init__(self, args: ClassifierArgs):
         self.path_to_training_data = args.path_to_training_data_dir
@@ -46,10 +42,17 @@ class DigitClassifier:
         """
         function to load train data
         """
-        for train_folder_path in sorted(os.listdir(self.path_to_training_data), key=lambda x: self.word_to_number[x]):
+        for train_folder_path in sorted(
+            {"one", "two", "three", "four", "five"},
+            key=lambda x: self.word_to_number[x],
+        ):
             cur_list = []
-            for train_file_path in os.listdir(os.path.join(self.path_to_training_data, train_folder_path)):
-                train_paths_file = os.path.join(self.path_to_training_data, train_folder_path, train_file_path)
+            for train_file_path in os.listdir(
+                os.path.join(self.path_to_training_data, train_folder_path)
+            ):
+                train_paths_file = os.path.join(
+                    self.path_to_training_data, train_folder_path, train_file_path
+                )
                 audio, sr = librosa.load(train_paths_file)
                 cur_list.append(self.extract_mfccs(audio, sr))
             self.train_data.append(cur_list)
@@ -88,12 +91,20 @@ class DigitClassifier:
         return torch.tensor(mfcc).unsqueeze(0)
 
     @abstractmethod
-    def classify_using_eucledian_distance(self, audio_files: tp.Union[tp.List[str], torch.Tensor]) -> tp.List[int]:
+    def classify_using_eucledian_distance(
+        self, audio_files: tp.Union[tp.List[str], torch.Tensor]
+    ) -> tp.List[int]:
         """
         function to classify a given audio using auclidean distance
         audio_files: list of audio file paths or a a batch of audio files of shape [Batch, Channels, Time]
         return: list of predicted label for each batch entry
         """
+        return self.classify_digits(audio_files, True)
+
+    @abstractmethod
+    def classify_digits(
+        self, audio_files: tp.Union[tp.List[str], torch.Tensor] , use_euclidean
+    ) -> tp.List[int]:
         if isinstance(audio_files, list):
             # load audio files from paths
             test_data = DigitClassifier.load_test_data(audio_files)
@@ -105,12 +116,13 @@ class DigitClassifier:
                 test_data = torch.cat((test_data, cur_test_feats.unsqueeze(0)))
         results = []
         for test_sample in test_data:
-            predicted_label = self.classify_sample_using_euclidean(test_sample)
+            predicted_label = self.classify_sample_using_provided_dist(test_sample, use_euclidean)
             results.append(predicted_label)
         return results
-        # calculate distance
 
-    def classify_sample_using_euclidean(self, test_sample: torch.Tensor) -> int:
+    def classify_sample_using_provided_dist(
+        self, test_sample: torch.Tensor, use_euclidean=True
+    ) -> int:
         """
         function to classify a given audio using auclidean distance
         test_sample: a tensor of shape [Channels, Time]
@@ -120,19 +132,55 @@ class DigitClassifier:
         for train_data in self.train_data:
             cur_distances = []
             for train_sample in train_data:
-                cur_distances.append(torch.dist(train_sample, test_sample).item())
+                if use_euclidean:
+                    dist = torch.dist(train_sample.squeeze(0), test_sample).item()
+                else:
+                    dist = self.calculate_dtw_distance(
+                        train_sample.squeeze(0), test_sample
+                    )
+                cur_distances.append(dist)
             distances.append(min(cur_distances))
         # return predicted labels
         return distances.index(min(distances)) + 1
 
     @abstractmethod
-    def classify_using_DTW_distance(self, audio_files: tp.Union[tp.List[str], torch.Tensor]) -> tp.List[int]:
+    def classify_using_DTW_distance(
+        self, audio_files: tp.Union[tp.List[str], torch.Tensor]
+    ) -> tp.List[int]:
         """
         function to classify a given audio using DTW distance
         audio_files: list of audio file paths or a a batch of audio files of shape [Batch, Channels, Time]
         return: list of predicted label for each batch entry
         """
-        raise NotImplementedError("function is not implemented")
+        return self.classify_digits(audio_files, False)
+
+    def calculate_dtw_distance(self, train_data: torch.Tensor, test_data: torch.Tensor):
+        """
+        function to calculate the DTW distance between two samples
+        return: DTW distance
+        """
+        m = test_data.shape[1]
+        results = [[numpy.inf for _ in range(m)] for _ in range(m)]
+        results[0][0] = torch.dist(test_data[:, 0], train_data[:, 0]).item()
+        for i in range(0, m):
+            for j in range(0, m):
+                if i == 0 and j != 0:
+                    results[i][j] = (
+                        torch.dist(test_data[:, i], train_data[:, j]).item()
+                        + results[i][j - 1]
+                    )
+                elif i != 0 and j == 0:
+                    results[i][j] = (
+                        torch.dist(test_data[:, i], train_data[:, j]).item()
+                        + results[i - 1][j]
+                    )
+                elif i != 0 and j != 0:
+                    results[i][j] = torch.dist(
+                        test_data[:, i], train_data[:, j]
+                    ).item() + min(
+                        results[i][j - 1], results[i - 1][j - 1], results[i - 1][j]
+                    )
+        return results[m - 1][m - 1]
 
     @abstractmethod
     def classify(self, audio_files: tp.List[str]) -> tp.List[str]:
@@ -144,16 +192,8 @@ class DigitClassifier:
         """
         raise NotImplementedError("function is not implemented")
 
-        # calculate euclidean distance
-        euclidean_distances = []
-        for train_data in self.train_data:
-            euclidean_distances.append(torch.cdist(train_data, test_data).mean(dim=1))
-        euclidean_distances = torch.stack(euclidean_distances)
-        return euclidean_distances.argmin(dim=0).tolist()
-
 
 class ClassifierHandler:
-
     @staticmethod
     def get_pretrained_model() -> DigitClassifier:
         """
@@ -165,10 +205,15 @@ class ClassifierHandler:
 
 model = DigitClassifier(ClassifierArgs())
 model.load_train_data()
-test_paths = [path for path in
-             [os.path.join(model.path_to_test_data, name) for name in os.listdir(model.path_to_test_data)]]
+test_paths = [
+    path
+    for path in [
+        os.path.join(model.path_to_test_data, name)
+        for name in os.listdir(model.path_to_test_data)
+    ]
+]
 
 test_real_results = [2, 2, 2, 2, 2, 2, 2, 3, 2, 1, 3, 2, 4, 2, 1, 5, 4, 5, 4, 1, 4, 3]
 
-print(model.classify_using_eucledian_distance(test_paths))
+print(model.classify_using_DTW_distance(test_paths))
 print(test_real_results)
