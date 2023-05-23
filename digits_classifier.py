@@ -210,11 +210,16 @@ test_paths = [
     path
     for path in [
         os.path.join(model.path_to_test_data, name)
-        for name in os.listdir(model.path_to_test_data)
+        for name in sorted(os.listdir(model.path_to_test_data))
     ]
 ]
-
-print(model.classify(test_paths))
+# print(model.classify(test_paths))
+true_labels = [4, 2, 2, 1, 5, 4, 2, 1, 5, 4, 4,  2, 3, 2, 2, 1, 5, 4, 3 , 4, 4, 4, 4 , 1, 2, 2, 2, 3]
+pred = model.classify_using_DTW_distance(test_paths[:len(true_labels)])
+e_pred = model.classify_using_eucledian_distance(test_paths[:len(true_labels)])
+pred_acc = sum([1 if p == t else 0 for p, t in zip(pred, true_labels)]) / len(pred)
+e_pred_acc = sum([1 if p == t else 0 for p, t in zip(e_pred, true_labels)]) / len(e_pred)
+print(pred_acc, e_pred_acc)
 
 # print('"' + '",\n "'.join(sorted(test_paths, reverse=True)) + '"')
 # test_real_results = [3, 1, 4, 4, 4, 2, 1, 2, 1, 5, 5, 1, 2, 4, 2, 1, 2, 5 , 3, 1]
