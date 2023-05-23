@@ -40,19 +40,19 @@ class DigitClassifier():
     def __init__(self, args: ClassifierArgs):
         self.path_to_training_data = args.path_to_training_data_dir
         self.path_to_test_data = args.path_to_test_data_dir
-        self.train_data: tp.List[torch.Tensor] = []
+        self.train_data: tp.List[tp.List[torch.Tensor]] = []
 
     def load_train_data(self):
         """
         function to load train data
         """
         for train_folder_path in sorted(os.listdir(self.path_to_training_data), key=lambda x: self.word_to_number[x]):
-            cur_data_torch = torch.tensor([])
+            cur_list = []
             for train_file_path in os.listdir(os.path.join(self.path_to_training_data, train_folder_path)):
                 train_paths_file = os.path.join(self.path_to_training_data, train_folder_path, train_file_path)
                 audio, sr = librosa.load(train_paths_file)
-                cur_data_torch = torch.cat((cur_data_torch, self.extract_mfccs(audio, sr)))
-            self.train_data.append(cur_data_torch)
+                cur_list.append(self.extract_mfccs(audio, sr))
+            self.train_data.append(cur_list)
         pass
 
     @staticmethod
@@ -87,8 +87,28 @@ class DigitClassifier():
             # load audio files from paths
             test_data = DigitClassifier.load_test_data(audio_files)
         else:
-            test_data = audio_files
+            test_data = audio_files.squeeze(1)
+        results = []
+        for test_sample in test_data:
+            predicted_label = self.classify_sample_using_euclidean(test_sample)
+            results.append(predicted_label)
+        return results
+        # calculate distance
 
+    def classify_sample_using_euclidean(self, test_sample: torch.Tensor) -> int:
+        """
+        function to classify a given audio using auclidean distance
+        test_sample: a tensor of shape [Channels, Time]
+        return: predicted label
+        """
+        distances = []
+        for train_data in self.train_data:
+            cur_distances = []
+            for train_sample in train_data:
+                cur_distances.append(torch.dist(train_sample, test_sample).item())
+            distances.append(min(cur_distances))
+        # return predicted labels
+        return distances.index(min(distances)) + 1
 
     @abstractmethod
     def classify_using_DTW_distance(self, audio_files: tp.Union[tp.List[str], torch.Tensor]) -> tp.List[int]:
@@ -121,5 +141,10 @@ class ClassifierHandler:
         raise NotImplementedError("function is not implemented")
 
 
-DigitClassifier(ClassifierArgs()).load_train_data()
-pass
+model = DigitClassifier(ClassifierArgs())
+model.load_train_data()
+test_paths = [path for path in
+              [os.path.join(model.path_to_test_data, name) for name in os.listdir(model.path_to_test_data)]]
+print(model.classify_using_eucledian_distance(test_paths))
+test_real_results = [2, 2, 2, 2, 2, 2, 2, 3, 2, 1, 3, 2, 4, 2, 1, 5, 4, 5, 4, 1, 4, 3]
+print(test_real_results)
