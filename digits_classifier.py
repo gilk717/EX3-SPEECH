@@ -19,8 +19,8 @@ class ClassifierArgs:
     """
     # we will use this to give an absolute path to the data, make sure you read the data using this argument. 
     # you may assume the train data is the same
-    path_to_training_data_dir: str = "./train_files"
-    path_to_test_data_dir: str = "./test_files"
+    path_to_training_data_dir: str = "train_files"
+    path_to_test_data_dir: str = "test_files"
 
     # you may add other args here
 
@@ -145,6 +145,13 @@ class DigitClassifier():
         """
         raise NotImplementedError("function is not implemented")
 
+        # calculate euclidean distance
+        euclidean_distances = []
+        for train_data in self.train_data:
+            euclidean_distances.append(torch.cdist(train_data, test_data).mean(dim=1))
+        euclidean_distances = torch.stack(euclidean_distances)
+        return euclidean_distances.argmin(dim=0).tolist()
+
 
 class ClassifierHandler:
 
@@ -160,7 +167,20 @@ class ClassifierHandler:
 model = DigitClassifier(ClassifierArgs())
 model.load_train_data()
 test_paths = [path for path in
-              [os.path.join(model.path_to_test_data, name) for name in os.listdir(model.path_to_test_data)]]
-print(model.classify_using_eucledian_distance(test_paths))
+             [os.path.join(model.path_to_test_data, name) for name in os.listdir(model.path_to_test_data)]]
+
+#load test data as a tensor of shape [Batch, Channels, Time]
+
+test_data = torch.tensor([])
+for test_file_path in test_paths:
+    audio, sr = librosa.load(test_file_path)
+    test_data = torch.cat((test_data, torch.tensor(audio).unsqueeze(0)))
+
+test_data = test_data.unsqueeze(1)
+print(test_data.shape)
+
+
+
+print(model.classify_using_eucledian_distance(test_data))
 test_real_results = [2, 2, 2, 2, 2, 2, 2, 3, 2, 1, 3, 2, 4, 2, 1, 5, 4, 5, 4, 1, 4, 3]
 print(test_real_results)
