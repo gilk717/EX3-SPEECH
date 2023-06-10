@@ -21,7 +21,6 @@ class ClassifierArgs:
     # we will use this to give an absolute path to the data, make sure you read the data using this argument.
     # you may assume the train data is the same
     path_to_training_data_dir: str = "./train_files"
-    path_to_test_data_dir: str = "./test_files"
 
     # you may add other args here
 
@@ -35,20 +34,20 @@ class DigitClassifier:
 
     def __init__(self, args: ClassifierArgs):
         self.path_to_training_data = args.path_to_training_data_dir
-        self.path_to_test_data = args.path_to_test_data_dir
         self.train_data: tp.List[tp.List[torch.Tensor]] = []
 
     def load_train_data(self):
         """
         function to load train data
         """
+        self.train_data = []
         for train_folder_path in sorted(
-            {"one", "two", "three", "four", "five"},
-            key=lambda x: self.word_to_number[x],
+                {"one", "two", "three", "four", "five"},
+                key=lambda x: self.word_to_number[x],
         ):
             cur_list = []
             for train_file_path in os.listdir(
-                os.path.join(self.path_to_training_data, train_folder_path)
+                    os.path.join(self.path_to_training_data, train_folder_path)
             ):
                 train_paths_file = os.path.join(
                     self.path_to_training_data, train_folder_path, train_file_path
@@ -186,6 +185,8 @@ class DigitClassifier:
         return: a list of strings of the following format: '{filename} - {predict using euclidean distance} - {predict using DTW distance}'
         Note: filename should not include parent path, but only the file name itself.
         """
+        if not self.train_data:
+            self.load_train_data()
         predict_dtw = self.classify_using_DTW_distance(audio_files)
         predict_euc = self.classify_using_eucledian_distance(audio_files)
         return [str(os.path.basename(filepath)) + " - " + str(euc) + " - " + str(dtw) for filepath, euc, dtw in
@@ -204,12 +205,13 @@ class ClassifierHandler:
         return model
 
 
-# model = DigitClassifier(ClassifierArgs())
-# model.load_train_data()
-# results = model.classify([
-#         os.path.join(model.path_to_test_data, name)
-#         for name in os.listdir(model.path_to_test_data)
-#     ])
-# # write results to file
-# with open("output.txt", "w") as f:
-#     f.write("\n".join(results))
+if __name__ == "__main__":
+    model = ClassifierHandler.get_pretrained_model()
+    path_to_test_data = "./test_files"
+    results = model.classify([
+        os.path.join(path_to_test_data, name)
+        for name in os.listdir(path_to_test_data)
+    ])
+    # write results to file
+    with open("output.txt", "w") as f:
+        f.write("\n".join(results))
