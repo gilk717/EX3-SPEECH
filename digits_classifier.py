@@ -77,7 +77,7 @@ class DigitClassifier:
         return: a tensor of shape [MFCCs, Time]
         """
         numpy_audio = audio.numpy()
-        mfcc = librosa.feature.mfcc(y=numpy_audio, n_mfcc=20)
+        mfcc = librosa.feature.mfcc(y=numpy_audio, n_mfcc=20, sr=16000)
         return torch.tensor(mfcc)
 
     @staticmethod
