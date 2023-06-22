@@ -65,7 +65,7 @@ class DigitClassifier:
         test_data = torch.tensor([])
         for test_file_path in paths_to_test_data_dir:
             cr = librosa.get_samplerate(test_file_path)
-            audio, sr = librosa.load(test_file_path, sr = cr)
+            audio, sr = librosa.load(test_file_path, sr=cr)
             test_data = torch.cat((test_data, DigitClassifier.extract_mfccs(audio, sr)))
         return test_data
 
@@ -133,7 +133,8 @@ class DigitClassifier:
             cur_distances = []
             for train_sample in train_data:
                 if use_euclidean:
-                    dist = numpy.linalg.norm(torch.flatten(train_sample.squeeze(0)).numpy() - torch.flatten(test_sample).numpy())
+                    dist = numpy.linalg.norm(
+                        torch.flatten(train_sample.squeeze(0)).numpy() - torch.flatten(test_sample).numpy())
                 else:
                     dist = self.calculate_dtw_distance(
                         train_sample.squeeze(0), test_sample
