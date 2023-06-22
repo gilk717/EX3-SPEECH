@@ -133,7 +133,7 @@ class DigitClassifier:
             cur_distances = []
             for train_sample in train_data:
                 if use_euclidean:
-                    dist = torch.sum(torch.pairwise_distance(train_sample.squeeze(0), test_sample, p=2))
+                    dist = numpy.linalg.norm(torch.flatten(train_sample.squeeze(0)).numpy() - torch.flatten(test_sample).numpy())
                 else:
                     dist = self.calculate_dtw_distance(
                         train_sample.squeeze(0), test_sample
