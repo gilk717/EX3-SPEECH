@@ -209,3 +209,13 @@ class ClassifierHandler:
         model.load_train_data()
         return model
 
+if __name__ == "__main__":
+    model = ClassifierHandler.get_pretrained_model()
+    path_to_test_data = "./test_files"
+    results = model.classify([
+        os.path.join(path_to_test_data, name)
+        for name in os.listdir(path_to_test_data)
+    ])
+    # write results to file
+    with open("output.txt", "w") as f:
+        f.write("\n".join(results))
