@@ -52,9 +52,10 @@ class DigitClassifier:
                 train_paths_file = os.path.join(
                     self.path_to_training_data, train_folder_path, train_file_path
                 )
-                cr = librosa.get_samplerate(train_paths_file)
-                audio, sr = librosa.load(train_paths_file, sr=cr)
-                cur_list.append(self.extract_mfccs(audio, sr))
+                if train_paths_file.endswith('.wav'):
+                    cr = librosa.get_samplerate(train_paths_file)
+                    audio, sr = librosa.load(train_paths_file, sr=cr)
+                    cur_list.append(self.extract_mfccs(audio, sr))
             self.train_data.append(cur_list)
 
     @staticmethod
@@ -64,9 +65,10 @@ class DigitClassifier:
         """
         test_data = torch.tensor([])
         for test_file_path in paths_to_test_data_dir:
-            cr = librosa.get_samplerate(test_file_path)
-            audio, sr = librosa.load(test_file_path, sr=cr)
-            test_data = torch.cat((test_data, DigitClassifier.extract_mfccs(audio, sr)))
+            if test_file_path.endswith('.wav'):
+                cr = librosa.get_samplerate(test_file_path)
+                audio, sr = librosa.load(test_file_path, sr=cr)
+                test_data = torch.cat((test_data, DigitClassifier.extract_mfccs(audio, sr)))
         return test_data
 
     @staticmethod
@@ -207,14 +209,3 @@ class ClassifierHandler:
         model.load_train_data()
         return model
 
-
-if __name__ == "__main__":
-    model = ClassifierHandler.get_pretrained_model()
-    path_to_test_data = "./test_files"
-    results = model.classify([
-        os.path.join(path_to_test_data, name)
-        for name in os.listdir(path_to_test_data)
-    ])
-    # write results to file
-    with open("output.txt", "w") as f:
-        f.write("\n".join(results))
